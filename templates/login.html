@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — Сладкий рай</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #fff0f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(252,52,200,0.15);
+            padding: 48px 44px 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .login-card .logo {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            margin-bottom: 12px;
+        }
+
+        .login-card h1 {
+            font-size: 1.5rem;
+            color: #FC34C8;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .login-card .subtitle {
+            color: #888;
+            font-size: 0.95rem;
+            margin-bottom: 32px;
+        }
+
+        .flash {
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            text-align: left;
+        }
+        .flash.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e0c0dc;
+            border-radius: 8px;
+            font-family: 'Times New Roman', serif;
+            font-size: 1rem;
+            color: #222;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #FC34C8;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #FC34C8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+            transition: filter 0.15s;
+        }
+
+        .btn-login:hover {
+            filter: brightness(0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <img src="{{ url_for('static', filename='img/Icon.JPG') }}" alt="Логотип" class="logo">
+        <h1>Сладкий рай</h1>
+        <p class="subtitle">Войдите в систему</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label for="login">Логин</label>
+                <input type="text" id="login" name="login" placeholder="example@cake-shop.ru" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-login">Войти</button>
+        </form>
+    </div>
+</body>
+</html>

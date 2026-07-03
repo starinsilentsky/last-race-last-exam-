@@ -6,13 +6,17 @@ app = Flask(__name__)
 app.secret_key = 'sladkiy-ray-secret'
 DB_PATH = os.path.join(os.path.dirname(__file__), 'cakes.db')
 
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
     conn = get_db()
+
+    # Таблица тортов
     conn.execute('''
         CREATE TABLE IF NOT EXISTS cakes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +33,19 @@ def init_db():
             photo TEXT
         )
     ''')
+
+    # Таблица пользователей
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            login TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+    ''')
+
+    # Заполнение тортов
     count = conn.execute('SELECT COUNT(*) FROM cakes').fetchone()[0]
     if count == 0:
         cakes = [
@@ -57,10 +74,57 @@ def init_db():
             'INSERT INTO cakes (article, name, unit, price, brand, cake_type, category, discount, stock, description, photo) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
             cakes
         )
+
+    # Заполнение пользователей из файла импорта
+    user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    if user_count == 0:
+        users = [
+            ('Администратор', 'Кондратьева Алиса Михайловна', 'kondratieva@cake-shop.ru', 'AdCk76#'),
+            ('Администратор', 'Волошин Игорь Сергеевич', 'voloshin@cake-shop.ru', 'XyZ$89p'),
+            ('Администратор', 'Сладкоежкина Виктория Павловна', 'sladkoezhkina@cake-shop.ru', 'T0rt!k45'),
+            ('Менеджер', 'Кремов Артем Дмитриевич', 'kremov@cake-shop.ru', 'Mn7@gP23'),
+            ('Менеджер', 'Бисквитов Петр Владимирович', 'biskvitov@cake-shop.ru', 'Rt5#fH67'),
+            ('Менеджер', 'Ягодная Елена Игоревна', 'yagodnaya@cake-shop.ru', 'Ber3ry$1'),
+            ('Авторизированный клиент', 'Сахарова Анна Викторовна', 'saharova.client@mail.ru', 'Cli3nt#9'),
+            ('Авторизированный клиент', 'Вафельный Максим Олегович', 'waffle.client@gmail.com', 'WafFl3$5'),
+            ('Авторизированный клиент', 'Шоколадов Кирилл Александрович', 'chocolate.client@yandex.ru', 'Ch0c0L8*'),
+            ('Авторизированный клиент', 'Фруктовская Ольга Сергеевна', 'fruit.client@outlook.com', 'FrU1t%22'),
+        ]
+        conn.executemany(
+            'INSERT INTO users (role, full_name, login, password) VALUES (?,?,?,?)',
+            users
+        )
+
     conn.commit()
     conn.close()
 
-@app.route('/')
+
+# ── АУТЕНТИФИКАЦИЯ ──────────────────────────────────────────────────────────
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        login_val = request.form.get('login', '').strip()
+        password_val = request.form.get('password', '').strip()
+
+        conn = get_db()
+        user = conn.execute(
+            'SELECT * FROM users WHERE login = ? AND password = ?',
+            (login_val, password_val)
+        ).fetchone()
+        conn.close()
+
+        if user:
+            return redirect(url_for('index'))
+        else:
+            flash('Неверный логин или пароль', 'error')
+
+    return render_template('login.html')
+
+
+# ── КАТАЛОГ ТОРТОВ ──────────────────────────────────────────────────────────
+
+@app.route('/cakes')
 def index():
     conn = get_db()
     search = request.args.get('search', '').strip()
@@ -93,6 +157,7 @@ def index():
     return render_template('index.html', cakes=cakes, brands=brands,
                            search=search, brand_filter=brand_filter, sort=sort)
 
+
 @app.route('/cake/new', methods=['GET', 'POST'])
 def new_cake():
     if request.method == 'POST':
@@ -112,6 +177,7 @@ def new_cake():
         flash('Торт успешно добавлен!', 'success')
         return redirect(url_for('index'))
     return render_template('form.html', cake=None, title='Добавить торт')
+
 
 @app.route('/cake/<int:cake_id>/edit', methods=['GET', 'POST'])
 def edit_cake(cake_id):
@@ -140,6 +206,7 @@ def edit_cake(cake_id):
     conn.close()
     return render_template('form.html', cake=cake, title='Редактировать торт')
 
+
 @app.route('/cake/<int:cake_id>/delete', methods=['POST'])
 def delete_cake(cake_id):
     conn = get_db()
@@ -148,6 +215,7 @@ def delete_cake(cake_id):
     conn.close()
     flash('Торт удалён из каталога.', 'info')
     return redirect(url_for('index'))
+
 
 if __name__ == '__main__':
     init_db()
